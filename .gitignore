@@ -1,0 +1,52 @@
+# Private local notes — NEVER commit
+_local/
+_local/**
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+*.db
+*.db-shm
+*.db-wal
+appsettings.*.local.json
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+coverage/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Misc
+*.log
+.vs/
