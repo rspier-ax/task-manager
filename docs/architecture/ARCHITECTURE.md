@@ -39,7 +39,7 @@ Services (framework-free validation + ownership rules):
 
 Abstractions implemented in Infrastructure: `IUserRepository`, `ITaskRepository`, `IPasswordHasher`, `ITokenService`.
 
-Application exceptions: `ValidationException`, `NotFoundException`, `ConflictException` (mapped by API later).
+Application exceptions: `ValidationException`, `NotFoundException`, `ConflictException` (mapped by API middleware to 400/404/409).
 
 ## Infrastructure layer
 
@@ -50,12 +50,21 @@ Application exceptions: `ValidationException`, `NotFoundException`, `ConflictExc
 - `DbSeeder` — `EnsureCreated` + demo user `demo@taskmanager.local` / `Demo123!` and sample tasks
 - `AddInfrastructure(IConfiguration)` registers all of the above
 
-HTTP JWT middleware and controllers land in the Api phase.
+## API layer
 
-## Auth model (planned)
+- Controllers: `AuthController` (public), `TasksController` (`[Authorize]`)
+- JWT Bearer auth, CORS for Vite (`localhost:5173`), Swagger with Bearer scheme
+- Exception middleware maps Application exceptions to HTTP status codes
+- Seed runs on startup via `DbSeeder.SeedAsync`
 
-- Public: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/health`
-- Authorized: CRUD `/api/tasks` — scoped to the current user
+## Auth model
+
+| Endpoint | Auth |
+|----------|------|
+| `GET /api/health` | Public |
+| `POST /api/auth/register` | Public |
+| `POST /api/auth/login` | Public |
+| `GET/POST /api/tasks`, `GET/PUT/DELETE /api/tasks/{id}` | JWT required; scoped to `sub` user id |
 
 ## Data model
 
