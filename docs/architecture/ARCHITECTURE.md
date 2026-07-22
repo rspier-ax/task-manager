@@ -37,9 +37,20 @@ Services (framework-free validation + ownership rules):
 - `AuthService` — register / login via `IUserRepository`, `IPasswordHasher`, `ITokenService`
 - `TaskService` — CRUD always scoped by `userId` via `ITaskRepository`
 
-Abstractions implemented in Infrastructure (next phase): `IUserRepository`, `ITaskRepository`, `IPasswordHasher`, `ITokenService`.
+Abstractions implemented in Infrastructure: `IUserRepository`, `ITaskRepository`, `IPasswordHasher`, `ITokenService`.
 
 Application exceptions: `ValidationException`, `NotFoundException`, `ConflictException` (mapped by API later).
+
+## Infrastructure layer
+
+- `AppDbContext` (EF Core + SQLite) with unique email and task ownership FK
+- `UserRepository` / `TaskRepository` — task reads always filter by `UserId`
+- `PasswordHasher` — ASP.NET Identity password hasher
+- `JwtTokenService` — JWT with `sub` / NameIdentifier = user id
+- `DbSeeder` — `EnsureCreated` + demo user `demo@taskmanager.local` / `Demo123!` and sample tasks
+- `AddInfrastructure(IConfiguration)` registers all of the above
+
+HTTP JWT middleware and controllers land in the Api phase.
 
 ## Auth model (planned)
 

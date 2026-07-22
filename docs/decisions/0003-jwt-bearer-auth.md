@@ -1,7 +1,7 @@
 # ADR-0003: JWT Bearer authentication
 
 Date: 2026-07-22  
-Status: proposed
+Status: accepted
 
 ## Context
 
