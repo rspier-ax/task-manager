@@ -1,7 +1,7 @@
 # ADR-0001: Clean Architecture layers
 
 Date: 2026-07-22  
-Status: proposed
+Status: accepted
 
 ## Context
 

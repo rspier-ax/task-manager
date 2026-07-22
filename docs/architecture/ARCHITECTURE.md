@@ -35,10 +35,13 @@ TaskManager.Domain
 - Public: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/health`
 - Authorized: CRUD `/api/tasks` — scoped to the current user
 
-## Data model (planned)
+## Data model
 
-- **User:** Id, Email, PasswordHash, DisplayName, CreatedAt
-- **TaskItem:** Id, UserId, Title, Description, Status, DueDate, CreatedAt, UpdatedAt
+- **User:** Id (`Guid`), Email, PasswordHash, DisplayName, CreatedAt (`DateTimeOffset`)
+- **TaskItem:** Id, UserId, Title, Description (`string?`), Status (`TaskStatus`), DueDate (`DateTimeOffset?`), CreatedAt, UpdatedAt
+- **TaskStatus enum:** `Todo`, `InProgress`, `Done`
+
+Domain types live under `TaskManager.Domain.Entities` and `TaskManager.Domain.Enums` with no EF/ASP.NET attributes.
 
 ## Frontend (planned)
 
