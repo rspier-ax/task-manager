@@ -2,7 +2,7 @@
 
 A small full-stack **task manager** built for a .NET technical interview exercise: Clean Architecture backend, JWT auth, CRUD tasks per user, and a React frontend (coming in a later phase).
 
-> **Status:** scaffolding phase. Solution layout and documentation are in place; domain, API, and UI land in follow-up PRs.
+> **Status:** backend API is runnable (JWT auth + task CRUD + Swagger). React SPA lands in a follow-up PR.
 
 ## User story
 
@@ -12,16 +12,16 @@ As an authenticated user, I want to create, read, update, and delete my tasks (t
 
 - Clean Architecture (.NET): Domain → Application → Infrastructure → Api
 - Auth: register, login, authorized vs public endpoints
-- Data: users + tasks (EF Core + SQLite — planned)
+- Data: users + tasks (EF Core + SQLite)
 - Frontend: React + Vite + TypeScript CRUD (planned)
 - Docs: `AGENTS.md`, ADRs, workflow — same spirit as a portfolio case study
 - GenAI fluency: prompt craft, validation, and corrections (see below)
 
 ## Demo workflow
 
-See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) (stub until the API exists).
+See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for the Swagger walkthrough.
 
-**Planned seed credentials**
+**Seed credentials**
 
 | Field | Value |
 |-------|--------|
@@ -55,15 +55,15 @@ Details: [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md
 
 ## Run locally
 
-> Commands will work fully once Application/Infrastructure/Api are implemented.
-
 ```bash
 dotnet restore
 dotnet run --project src/TaskManager.Api
+# Swagger: http://localhost:5080/swagger
 # later:
 cd frontend && npm ci && npm run dev
 ```
 
+Login with the seed user above, authorize in Swagger, then exercise `/api/tasks`.
 ## Test strategy
 
 - Application: unit tests for validation and ownership rules
@@ -134,13 +134,13 @@ Planning happened in Cursor Plan mode with iterative refinement:
 
 ### Representative sample
 
-A code sample from the generated/implemented Application or API layer will be pasted here in a later docs PR once those projects contain real logic. Until then, the prompt and validation checklist above are the GenAI deliverable for this scaffold phase.
+See Application services (`AuthService`, `TaskService`) and API controllers under `src/` for the implemented shapes that GenAI scaffolding was validated against. A short excerpt can be added in a later docs polish PR if useful for the presentation.
 
-## Limitations (v1 scaffold)
+## Limitations (v1)
 
-- No runnable API or UI yet in this PR
-- ADRs are `proposed` until the matching code merges
-- Demo guide is a stub
+- React SPA not shipped yet
+- API integration tests (`WebApplicationFactory`) land in the next phase
+- Demo JWT key is for local demo only — replace in any shared environment
 
 ## Docs
 
