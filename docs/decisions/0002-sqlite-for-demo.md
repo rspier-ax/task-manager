@@ -1,7 +1,7 @@
 # ADR-0002: SQLite for demo persistence
 
 Date: 2026-07-22  
-Status: proposed
+Status: accepted
 
 ## Context
 
