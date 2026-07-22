@@ -30,6 +30,17 @@ TaskManager.Domain
 | Api | Controllers, auth middleware, DI composition, CORS, Swagger |
 | Tests | Unit (Application) + integration (Api) |
 
+## Application layer
+
+Services (framework-free validation + ownership rules):
+
+- `AuthService` — register / login via `IUserRepository`, `IPasswordHasher`, `ITokenService`
+- `TaskService` — CRUD always scoped by `userId` via `ITaskRepository`
+
+Abstractions implemented in Infrastructure (next phase): `IUserRepository`, `ITaskRepository`, `IPasswordHasher`, `ITokenService`.
+
+Application exceptions: `ValidationException`, `NotFoundException`, `ConflictException` (mapped by API later).
+
 ## Auth model (planned)
 
 - Public: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/health`
