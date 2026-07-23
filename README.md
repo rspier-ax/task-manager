@@ -30,15 +30,7 @@ See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for Swagger and SPA
 
 ## Screenshots
 
-Drop media into [`docs/assets/`](./docs/assets/) (see the checklist there), then the images below will render on GitHub.
-
-![Login](docs/assets/login.png)
-
-![Task list](docs/assets/tasks-list.png)
-
-![Swagger authorize](docs/assets/swagger-auth.png)
-
-> GIFs work the same way (`login.gif`, etc.) — update the paths above if you prefer motion demos.
+Capture stills (or short GIFs) into [`docs/assets/`](./docs/assets/) using the checklist there — suggested files: `login.png`, `tasks-list.png`, `swagger-auth.png`. Add them when you have a clean demo take; the SPA and Swagger paths are documented in the [demo guide](./docs/guides/demo-guide.md).
 
 ## Architecture
 
@@ -67,6 +59,8 @@ Details: [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md
 
 ## Run locally
 
+Prerequisites: **.NET 10 SDK**, **Node.js 20+**.
+
 ```bash
 # API
 dotnet restore
@@ -79,6 +73,7 @@ cd frontend && npm ci && npm run dev
 ```
 
 Login with the seed user above in the SPA (or authorize in Swagger to explore `/api/tasks`).
+
 ## Test strategy
 
 - Application: unit tests for validation and ownership rules
@@ -126,14 +121,14 @@ Do not put EF Core entities configuration inside Domain.
 Prefer repository interfaces in Application, implementations in Infrastructure.
 ```
 
-### How I used GenAI on this project so far
+### How I used GenAI on this project
 
 Planning happened in Cursor Plan mode with iterative refinement:
 
 - Locked the domain to **Task Manager** and frontend to **React + Vite + TypeScript**
 - Chose **SQLite + JWT** and a **Clean Architecture** split (captured as ADR-0001…0003)
-- Adopted a **docs-first scaffold** (this PR) before writing business code
-- Defined a **phase → PR → merge → new plan** cadence so each slice stays reviewable
+- Started with a **docs-first scaffold**, then shipped slices as small PRs (domain → application → infrastructure → API → frontend → polish)
+- Kept a **phase → PR → merge → new plan** cadence so each slice stayed reviewable
 
 ### How I validate AI suggestions
 
@@ -142,7 +137,7 @@ Planning happened in Cursor Plan mode with iterative refinement:
 - Require an explicit checklist: password hashing, `UserId` filters, public vs `[Authorize]`, seed demo user
 - Prefer failing tests before accepting Application/API behavior
 
-### Corrections I expect (and will apply) vs naive AI output
+### Corrections applied vs naive AI output
 
 | Risk | Correction |
 |------|------------|
@@ -177,7 +172,9 @@ That keeps “task not found” and “task belongs to someone else” indisting
 ## Limitations (v1)
 
 - Demo JWT key is for local demo only — replace in any shared environment
+- SQLite schema is created with `EnsureCreated` for a fast clone/demo (not a long-lived migration history)
 - No Playwright E2E suite yet
+- Screenshot PNGs are optional under `docs/assets/` (checklist only until you capture them)
 
 ## Docs
 

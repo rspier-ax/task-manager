@@ -17,7 +17,7 @@ Plan (Cursor plan or issue notes)
        ↓
 Feature branch (<type>/…)
        ↓
-Small PR with tests (when code exists)
+Small PR with tests
        ↓
 Merge to main
        ↓

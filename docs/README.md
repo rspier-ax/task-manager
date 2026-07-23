@@ -21,3 +21,4 @@ All repository documentation is **English only**.
 |----------|-------------|
 | [engineering-practice.md](./engineering-practice.md) | Implementation order and review bar |
 | [WORKFLOW.md](./WORKFLOW.md) | Branch naming and PR conventions |
+| [assets/](./assets/) | Demo screenshot / GIF checklist |
