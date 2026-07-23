@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { SquareCheckBig } from 'lucide-react'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 
@@ -33,8 +34,14 @@ export function RegisterPage() {
   return (
     <main className="auth-shell">
       <section className="card auth-card">
-        <h1>Create account</h1>
-        <p className="muted">Register to start tracking tasks.</p>
+        <div className="auth-brand">
+          <span className="brand-mark" aria-hidden>
+            <SquareCheckBig size={28} strokeWidth={2.25} />
+          </span>
+          <p className="brand-name">TaskManager</p>
+        </div>
+        <h1 className="auth-title">Create account</h1>
+        <p className="muted auth-lead">A few details and you can start organizing tasks.</p>
         <form onSubmit={onSubmit} className="stack">
           <label>
             Display name
@@ -67,11 +74,11 @@ export function RegisterPage() {
             />
           </label>
           {error ? <p className="error">{error}</p> : null}
-          <button type="submit" disabled={loading}>
+          <button type="submit" className="btn-block" disabled={loading}>
             {loading ? 'Creating…' : 'Create account'}
           </button>
         </form>
-        <p className="muted">
+        <p className="muted footer-note">
           Already registered? <Link to="/login">Sign in</Link>
         </p>
       </section>
