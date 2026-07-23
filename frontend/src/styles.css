@@ -347,23 +347,22 @@ label {
   gap: 0.75rem;
 }
 
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
 .status-field {
   position: relative;
 }
 
-.status-field .status-dot {
-  position: absolute;
-  left: 0.85rem;
-  top: calc(50% + 0.55rem);
+.status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.status-field select {
-  padding-left: 1.75rem;
+  flex-shrink: 0;
 }
 
 .status-dot.todo {
@@ -376,6 +375,174 @@ label {
 
 .status-dot.done {
   background: var(--done-bar);
+}
+
+.status-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.status-trigger:hover:not(:disabled) {
+  background: #fff;
+  border-color: #cbd5e1;
+}
+
+.status-trigger.is-open,
+.status-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(11, 110, 79, 0.15);
+}
+
+.status-trigger-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+.status-trigger.is-open .status-chevron {
+  transform: rotate(180deg);
+}
+
+.status-menu {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 0.4rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.status-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.status-option:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.status-option.is-selected {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+button.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+button.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.45);
+  animation: fadeIn 160ms ease both;
+}
+
+.modal-card {
+  width: min(400px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.35rem 1.4rem;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+}
+
+.modal-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem;
+}
+
+.modal-message {
+  margin: 0 0 1.2rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.task-skeleton {
+  height: 92px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #cbd5e1;
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 0%,
+    #e8eef3 45%,
+    #f1f5f9 90%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .form-actions {
