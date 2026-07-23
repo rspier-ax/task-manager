@@ -46,7 +46,7 @@ Details: [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md
 
 | Layer | Choice |
 |-------|--------|
-| API | ASP.NET Core Web API (.NET 8) |
+| API | ASP.NET Core Web API (.NET 10) |
 | Architecture | Clean Architecture |
 | Data | EF Core + SQLite |
 | Auth | JWT Bearer |
@@ -67,8 +67,13 @@ Login with the seed user above, authorize in Swagger, then exercise `/api/tasks`
 ## Test strategy
 
 - Application: unit tests for validation and ownership rules
-- API: integration tests with `WebApplicationFactory`
+- Infrastructure: repository / hasher / JWT unit tests
+- API: integration tests with `WebApplicationFactory` (auth, CRUD, 401/400/404)
 - Prefer TDD per slice (see [docs/engineering-practice.md](./docs/engineering-practice.md))
+
+```bash
+dotnet test
+```
 
 ## Thought process
 
@@ -91,7 +96,7 @@ Inspiration for the docs layout came from earlier portfolio projects (`decision-
 ### Prompt I would use to scaffold the task API
 
 ```text
-Generate a RESTful API for a simple task management system in C# / ASP.NET Core (.NET 8).
+Generate a RESTful API for a simple task management system in C# / ASP.NET Core (.NET 10).
 
 Functionality:
 - CRUD tasks with title, description, status, and due_date
@@ -139,7 +144,6 @@ See Application services (`AuthService`, `TaskService`) and API controllers unde
 ## Limitations (v1)
 
 - React SPA not shipped yet
-- API integration tests (`WebApplicationFactory`) land in the next phase
 - Demo JWT key is for local demo only — replace in any shared environment
 
 ## Docs

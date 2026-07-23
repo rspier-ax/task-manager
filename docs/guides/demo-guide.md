@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Seed user: `demo@taskmanager.local` / `Demo123!`
 - Optional later: Node.js 20+ for the React SPA
 

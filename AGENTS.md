@@ -8,7 +8,7 @@ Simple **task manager** for authenticated users: create, list, update, and delet
 
 ## Stack
 
-- .NET 8, ASP.NET Core Web API, Clean Architecture
+- .NET 10, ASP.NET Core Web API, Clean Architecture
 - EF Core + SQLite (demo)
 - JWT Bearer authentication
 - React + Vite + TypeScript (frontend — scaffolded in a later phase)
