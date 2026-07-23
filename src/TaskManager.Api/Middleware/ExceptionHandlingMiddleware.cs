@@ -34,13 +34,18 @@ public class ExceptionHandlingMiddleware
 
     private async Task WriteErrorAsync(HttpContext context, Exception exception)
     {
+        var env = context.RequestServices.GetService<IHostEnvironment>();
         var (status, message) = exception switch
         {
             ValidationException ve => (HttpStatusCode.BadRequest, ve.Message),
             NotFoundException nfe => (HttpStatusCode.NotFound, nfe.Message),
             ConflictException ce => (HttpStatusCode.Conflict, ce.Message),
             UnauthorizedAccessException uae => (HttpStatusCode.Unauthorized, uae.Message),
-            _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
+            _ => (
+                HttpStatusCode.InternalServerError,
+                env?.IsDevelopment() == true
+                    ? $"{exception.GetType().Name}: {exception.Message}"
+                    : "An unexpected error occurred.")
         };
 
         if (status == HttpStatusCode.InternalServerError)
