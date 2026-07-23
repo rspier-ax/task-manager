@@ -25,6 +25,8 @@ cd frontend && npm ci && npm run dev
 5. Review seeded tasks → create a task → edit status → delete.
 6. Sign out and confirm you are redirected to login.
 
+**Screenshot tip:** capture login (`docs/assets/login.png`) and the task list after sign-in (`docs/assets/tasks-list.png`).
+
 ## API walkthrough (Swagger)
 
 1. With the API running, open `http://localhost:5080/swagger`.
@@ -38,3 +40,5 @@ cd frontend && npm ci && npm run dev
 4. Call `GET /api/tasks` — expect the seeded sample tasks.
 5. Clear the token and call `GET /api/tasks` again — expect `401`.
 6. Call `GET /api/health` without a token — expect `{ "status": "ok" }`.
+
+**Screenshot tip (optional):** capture Swagger Authorize + a successful tasks call as `docs/assets/swagger-auth.png`.

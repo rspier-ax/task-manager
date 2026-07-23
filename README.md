@@ -28,6 +28,18 @@ See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for Swagger and SPA
 | Email | `demo@taskmanager.local` |
 | Password | `Demo123!` |
 
+## Screenshots
+
+Drop media into [`docs/assets/`](./docs/assets/) (see the checklist there), then the images below will render on GitHub.
+
+![Login](docs/assets/login.png)
+
+![Task list](docs/assets/tasks-list.png)
+
+![Swagger authorize](docs/assets/swagger-auth.png)
+
+> GIFs work the same way (`login.gif`, etc.) — update the paths above if you prefer motion demos.
+
 ## Architecture
 
 ```
@@ -142,7 +154,25 @@ Planning happened in Cursor Plan mode with iterative refinement:
 
 ### Representative sample
 
-See Application services (`AuthService`, `TaskService`) and API controllers under `src/` for the implemented shapes that GenAI scaffolding was validated against. A short excerpt can be added in a later docs polish PR if useful for the presentation.
+Naive GenAI scaffolds often fetch a task by id only. The Application layer always scopes by the authenticated user (same pattern as `ITaskRepository.GetByIdForUserAsync`):
+
+```csharp
+private async Task<TaskItem> GetOwnedTaskAsync(
+    Guid userId,
+    Guid taskId,
+    CancellationToken cancellationToken)
+{
+    var task = await _tasks.GetByIdForUserAsync(taskId, userId, cancellationToken);
+    if (task is null)
+    {
+        throw new NotFoundException("Task not found.");
+    }
+
+    return task;
+}
+```
+
+That keeps “task not found” and “task belongs to someone else” indistinguishable to the caller — an intentional review point after accepting AI-generated CRUD.
 
 ## Limitations (v1)
 
