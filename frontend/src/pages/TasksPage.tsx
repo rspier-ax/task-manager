@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useState, type FormEvent, type MouseEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from 'react'
 import {
   Calendar,
   Check,
+  ChevronDown,
   ListTodo,
   Pencil,
   Plus,
@@ -12,6 +20,7 @@ import {
 import { ApiError } from '../api/client'
 import * as tasksApi from '../api/tasksApi'
 import { useAuth } from '../auth/AuthContext'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
   TASK_STATUS_LABELS,
   TaskStatus,
@@ -32,6 +41,8 @@ const emptyForm: FormState = {
   status: TaskStatus.Todo,
   dueDate: '',
 }
+
+const STATUS_OPTIONS = Object.values(TaskStatus)
 
 function toRequest(form: FormState): CreateTaskRequest {
   return {
@@ -68,34 +79,77 @@ export function TasksPage() {
   const { token, user, logout } = useAuth()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [statusOpen, setStatusOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Task | null>(null)
+  const statusMenuRef = useRef<HTMLDivElement>(null)
 
-  const loadTasks = useCallback(async () => {
-    if (!token) {
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await tasksApi.listTasks(token)
-      setTasks(data)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load tasks')
-    } finally {
-      setLoading(false)
-    }
-  }, [token])
+  const refreshTasks = useCallback(
+    async (mode: 'initial' | 'silent' | 'refresh' = 'silent') => {
+      if (!token) {
+        return
+      }
+      if (mode === 'initial') {
+        setLoading(true)
+      } else if (mode === 'refresh') {
+        setRefreshing(true)
+      }
+      setError(null)
+      try {
+        const data = await tasksApi.listTasks(token)
+        setTasks(data)
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : 'Failed to load tasks')
+      } finally {
+        if (mode === 'initial') {
+          setLoading(false)
+        } else if (mode === 'refresh') {
+          setRefreshing(false)
+        }
+      }
+    },
+    [token],
+  )
 
   useEffect(() => {
-    void loadTasks()
-  }, [loadTasks])
+    void refreshTasks('initial')
+  }, [refreshTasks])
+
+  useEffect(() => {
+    if (!statusOpen) {
+      return
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      if (!statusMenuRef.current?.contains(event.target as Node)) {
+        setStatusOpen(false)
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setStatusOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [statusOpen])
 
   function startCreate() {
     setEditingId(null)
     setForm(emptyForm)
+    setStatusOpen(false)
   }
 
   function startEdit(task: Task) {
@@ -106,6 +160,7 @@ export function TasksPage() {
       status: task.status,
       dueDate: dueDateInputValue(task.dueDate),
     })
+    setStatusOpen(false)
   }
 
   async function onSubmit(event: FormEvent) {
@@ -124,7 +179,8 @@ export function TasksPage() {
       }
       setForm(emptyForm)
       setEditingId(null)
-      await loadTasks()
+      setStatusOpen(false)
+      await refreshTasks('silent')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Save failed')
     } finally {
@@ -132,31 +188,41 @@ export function TasksPage() {
     }
   }
 
-  async function onDelete(task: Task) {
-    if (!token) {
+  async function confirmDelete() {
+    if (!token || !pendingDelete) {
       return
     }
-    if (!window.confirm(`Delete “${task.title}”?`)) {
-      return
-    }
+    const task = pendingDelete
+    setDeleting(true)
     setError(null)
     try {
       await tasksApi.deleteTask(token, task.id)
+      setPendingDelete(null)
       if (editingId === task.id) {
         startCreate()
       }
-      await loadTasks()
+      setTasks((current) => current.filter((item) => item.id !== task.id))
+      await refreshTasks('silent')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Delete failed')
+    } finally {
+      setDeleting(false)
     }
   }
 
   async function onToggleDone(task: Task) {
-    if (!token) {
+    if (!token || togglingId) {
       return
     }
+    const previous = task
     const nextStatus = task.status === TaskStatus.Done ? TaskStatus.Todo : TaskStatus.Done
+    const optimistic: Task = { ...task, status: nextStatus }
+    setTogglingId(task.id)
     setError(null)
+    setTasks((current) => current.map((item) => (item.id === task.id ? optimistic : item)))
+    if (editingId === task.id) {
+      setForm((f) => ({ ...f, status: nextStatus }))
+    }
     try {
       await tasksApi.updateTask(token, task.id, {
         title: task.title,
@@ -164,12 +230,14 @@ export function TasksPage() {
         status: nextStatus,
         dueDate: task.dueDate,
       })
-      if (editingId === task.id) {
-        setForm((f) => ({ ...f, status: nextStatus }))
-      }
-      await loadTasks()
     } catch (err) {
+      setTasks((current) => current.map((item) => (item.id === task.id ? previous : item)))
+      if (editingId === task.id) {
+        setForm((f) => ({ ...f, status: previous.status }))
+      }
       setError(err instanceof ApiError ? err.message : 'Update failed')
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -224,22 +292,50 @@ export function TasksPage() {
               />
             </label>
             <div className="field-row">
-              <label className="status-field">
-                Status
-                <span className={`status-dot ${formStatusKey}`} aria-hidden />
-                <select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, status: Number(e.target.value) as TaskStatus }))
-                  }
+              <div className="status-field" ref={statusMenuRef}>
+                <span className="field-label">Status</span>
+                <button
+                  type="button"
+                  className={`status-trigger${statusOpen ? ' is-open' : ''}`}
+                  aria-haspopup="listbox"
+                  aria-expanded={statusOpen}
+                  onClick={() => setStatusOpen((open) => !open)}
                 >
-                  {Object.values(TaskStatus).map((status) => (
-                    <option key={status} value={status}>
-                      {TASK_STATUS_LABELS[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <span className={`status-dot ${formStatusKey}`} aria-hidden />
+                  <span className="status-trigger-label">
+                    {TASK_STATUS_LABELS[form.status]}
+                  </span>
+                  <ChevronDown
+                    className="status-chevron"
+                    size={16}
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                </button>
+                {statusOpen ? (
+                  <ul className="status-menu" role="listbox" aria-label="Status">
+                    {STATUS_OPTIONS.map((status) => {
+                      const key = statusKey(status)
+                      const selected = form.status === status
+                      return (
+                        <li key={status} role="option" aria-selected={selected}>
+                          <button
+                            type="button"
+                            className={`status-option${selected ? ' is-selected' : ''}`}
+                            onClick={() => {
+                              setForm((f) => ({ ...f, status }))
+                              setStatusOpen(false)
+                            }}
+                          >
+                            <span className={`status-dot ${key}`} aria-hidden />
+                            {TASK_STATUS_LABELS[status]}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : null}
+              </div>
               <label>
                 Due date
                 <input
@@ -270,91 +366,131 @@ export function TasksPage() {
               <ListTodo className="title-icon" size={20} strokeWidth={2.25} aria-hidden />
               Your tasks
             </h2>
-            <button type="button" className="ghost" onClick={() => void loadTasks()}>
-              <RefreshCw size={16} strokeWidth={2.25} aria-hidden />
+            <button
+              type="button"
+              className="ghost"
+              disabled={refreshing || loading}
+              onClick={() => void refreshTasks('refresh')}
+            >
+              <RefreshCw
+                className={refreshing ? 'spin' : undefined}
+                size={16}
+                strokeWidth={2.25}
+                aria-hidden
+              />
               Refresh
             </button>
           </div>
           {error ? <p className="error">{error}</p> : null}
-          {loading ? <p className="muted">Loading tasks…</p> : null}
+          {loading ? (
+            <ul className="task-list" aria-busy="true" aria-label="Loading tasks">
+              {[0, 1, 2].map((index) => (
+                <li key={index} className="task-skeleton" />
+              ))}
+            </ul>
+          ) : null}
           {!loading && tasks.length === 0 ? (
             <div className="empty-state">
               <p className="muted">No tasks yet. Create one on the left to get started.</p>
             </div>
           ) : null}
-          <ul className="task-list">
-            {tasks.map((task) => {
-              const key = statusKey(task.status)
-              const isDone = task.status === TaskStatus.Done
-              return (
-                <li
-                  key={task.id}
-                  className={`task-card status-${key}`}
-                  onClick={() => startEdit(task)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      startEdit(task)
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <button
-                    type="button"
-                    className={`task-check${isDone ? ' is-done' : ''}`}
-                    aria-label={isDone ? 'Mark as todo' : 'Mark as done'}
-                    onClick={(e) => {
-                      stopCardClick(e)
-                      void onToggleDone(task)
+          {!loading ? (
+            <ul className="task-list">
+              {tasks.map((task) => {
+                const key = statusKey(task.status)
+                const isDone = task.status === TaskStatus.Done
+                const isToggling = togglingId === task.id
+                return (
+                  <li
+                    key={task.id}
+                    className={`task-card status-${key}`}
+                    onClick={() => startEdit(task)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        startEdit(task)
+                      }
                     }}
+                    role="button"
+                    tabIndex={0}
                   >
-                    {isDone ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
-                  </button>
-                  <div className="task-main">
-                    <p className="task-title">{task.title}</p>
-                    <div className="task-meta">
-                      <span className={`badge status-${key}`}>
-                        {TASK_STATUS_LABELS[task.status]}
-                      </span>
-                      {task.dueDate ? (
-                        <span className="due">
-                          <Calendar size={14} strokeWidth={2} aria-hidden />
-                          Due {new Date(task.dueDate).toLocaleDateString()}
+                    <button
+                      type="button"
+                      className={`task-check${isDone ? ' is-done' : ''}`}
+                      aria-label={isDone ? 'Mark as todo' : 'Mark as done'}
+                      disabled={isToggling}
+                      onClick={(e) => {
+                        stopCardClick(e)
+                        void onToggleDone(task)
+                      }}
+                    >
+                      {isDone ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
+                    </button>
+                    <div className="task-main">
+                      <p className="task-title">{task.title}</p>
+                      <div className="task-meta">
+                        <span className={`badge status-${key}`}>
+                          {TASK_STATUS_LABELS[task.status]}
                         </span>
+                        {task.dueDate ? (
+                          <span className="due">
+                            <Calendar size={14} strokeWidth={2} aria-hidden />
+                            Due {new Date(task.dueDate).toLocaleDateString()}
+                          </span>
+                        ) : null}
+                      </div>
+                      {task.description ? (
+                        <p className="task-description">{task.description}</p>
                       ) : null}
                     </div>
-                    {task.description ? (
-                      <p className="task-description">{task.description}</p>
-                    ) : null}
-                  </div>
-                  <div className="task-actions" onClick={stopCardClick}>
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      aria-label="Edit task"
-                      onClick={() => startEdit(task)}
-                    >
-                      <Pencil size={16} strokeWidth={2} />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn danger"
-                      aria-label="Delete task"
-                      onClick={() => void onDelete(task)}
-                    >
-                      <Trash2 size={16} strokeWidth={2} />
-                    </button>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+                    <div className="task-actions" onClick={stopCardClick}>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label="Edit task"
+                        onClick={() => startEdit(task)}
+                      >
+                        <Pencil size={16} strokeWidth={2} />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn danger"
+                        aria-label="Delete task"
+                        onClick={() => setPendingDelete(task)}
+                      >
+                        <Trash2 size={16} strokeWidth={2} />
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : null}
           {!loading && tasks.length > 0 ? (
             <p className="list-tip">Tip: Click on a task to edit.</p>
           ) : null}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete task?"
+        message={
+          pendingDelete
+            ? `“${pendingDelete.title}” will be removed permanently.`
+            : ''
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        danger
+        busy={deleting}
+        onCancel={() => {
+          if (!deleting) {
+            setPendingDelete(null)
+          }
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </main>
   )
 }
