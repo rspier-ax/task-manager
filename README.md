@@ -30,7 +30,7 @@ See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for Swagger and SPA
 
 ## Screenshots
 
-Capture stills (or short GIFs) into [`docs/assets/`](./docs/assets/) using the checklist there — suggested files: `login.png`, `tasks-list.png`, `swagger-auth.png`. Add them when you have a clean demo take; the SPA and Swagger paths are documented in the [demo guide](./docs/guides/demo-guide.md).
+![TaskManager main screen](docs/assets/main-screen.png)
 
 ## Architecture
 
@@ -174,7 +174,6 @@ That keeps “task not found” and “task belongs to someone else” indisting
 - Demo JWT key is for local demo only — replace in any shared environment
 - SQLite schema is created with `EnsureCreated` for a fast clone/demo (not a long-lived migration history)
 - No Playwright E2E suite yet
-- Screenshot PNGs are optional under `docs/assets/` (checklist only until you capture them)
 
 ## Docs
 
