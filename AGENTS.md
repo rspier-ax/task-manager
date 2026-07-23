@@ -11,7 +11,7 @@ Simple **task manager** for authenticated users: create, list, update, and delet
 - .NET 10, ASP.NET Core Web API, Clean Architecture
 - EF Core + SQLite (demo)
 - JWT Bearer authentication
-- React + Vite + TypeScript (frontend — scaffolded in a later phase)
+- React 19 + Vite + TypeScript (SPA in `frontend/`)
 - xUnit for tests
 
 ## Structure
@@ -47,7 +47,6 @@ docs/                            architecture, standards, ADRs
 ```bash
 dotnet restore
 dotnet test
-# Frontend (when present)
 cd frontend && npm ci && npm run build
 ```
 

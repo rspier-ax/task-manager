@@ -3,10 +3,10 @@
 ## Prerequisites
 
 - .NET 10 SDK
+- Node.js 20+ (for the React SPA)
 - Seed user: `demo@taskmanager.local` / `Demo123!`
-- Optional later: Node.js 20+ for the React SPA
 
-## API walkthrough (Swagger)
+## SPA walkthrough
 
 1. Start the API:
 
@@ -14,19 +14,27 @@
 dotnet run --project src/TaskManager.Api
 ```
 
-2. Open Swagger at `http://localhost:5080/swagger` (or the URL printed in the console).
-3. Call `POST /api/auth/login` with:
+2. Start the frontend:
+
+```bash
+cd frontend && npm ci && npm run dev
+```
+
+3. Open `http://localhost:5173`.
+4. Sign in with the seed credentials (hint shown on the login page).
+5. Review seeded tasks → create a task → edit status → delete.
+6. Sign out and confirm you are redirected to login.
+
+## API walkthrough (Swagger)
+
+1. With the API running, open `http://localhost:5080/swagger`.
+2. Call `POST /api/auth/login` with:
 
 ```json
 { "email": "demo@taskmanager.local", "password": "Demo123!" }
 ```
 
-4. Copy the `token` from the response. Click **Authorize**, paste the token (Swagger adds `Bearer `), and confirm.
-5. Call `GET /api/tasks` — expect the seeded sample tasks.
-6. `POST /api/tasks` to create one, then `PUT` / `DELETE` as needed.
-7. Clear the token (or use a private window) and call `GET /api/tasks` again — expect `401`.
-8. Call `GET /api/health` without a token — expect `{ "status": "ok" }`.
-
-## Frontend (later)
-
-When the SPA lands: `cd frontend && npm run dev`, log in with the same seed credentials, and exercise the same CRUD path in the UI.
+3. Copy the `token`. Click **Authorize**, paste it, and confirm.
+4. Call `GET /api/tasks` — expect the seeded sample tasks.
+5. Clear the token and call `GET /api/tasks` again — expect `401`.
+6. Call `GET /api/health` without a token — expect `{ "status": "ok" }`.

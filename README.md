@@ -1,8 +1,8 @@
 # TaskManager
 
-A small full-stack **task manager** built for a .NET technical interview exercise: Clean Architecture backend, JWT auth, CRUD tasks per user, and a React frontend (coming in a later phase).
+A small full-stack **task manager** built for a .NET technical interview exercise: Clean Architecture backend, JWT auth, CRUD tasks per user, and a React 19 + Vite SPA.
 
-> **Status:** backend API is runnable (JWT auth + task CRUD + Swagger). React SPA lands in a follow-up PR.
+> **Status:** full-stack demo is runnable (API + React SPA). Use seed credentials below.
 
 ## User story
 
@@ -13,13 +13,13 @@ As an authenticated user, I want to create, read, update, and delete my tasks (t
 - Clean Architecture (.NET): Domain → Application → Infrastructure → Api
 - Auth: register, login, authorized vs public endpoints
 - Data: users + tasks (EF Core + SQLite)
-- Frontend: React + Vite + TypeScript CRUD (planned)
+- Frontend: React 19 + Vite + TypeScript CRUD
 - Docs: `AGENTS.md`, ADRs, workflow — same spirit as a portfolio case study
 - GenAI fluency: prompt craft, validation, and corrections (see below)
 
 ## Demo workflow
 
-See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for the Swagger walkthrough.
+See [docs/guides/demo-guide.md](./docs/guides/demo-guide.md) for Swagger and SPA walkthroughs.
 
 **Seed credentials**
 
@@ -50,20 +50,23 @@ Details: [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md
 | Architecture | Clean Architecture |
 | Data | EF Core + SQLite |
 | Auth | JWT Bearer |
-| Frontend | React + Vite + TypeScript |
+| Frontend | React 19 + Vite + TypeScript |
 | Tests | xUnit |
 
 ## Run locally
 
 ```bash
+# API
 dotnet restore
 dotnet run --project src/TaskManager.Api
 # Swagger: http://localhost:5080/swagger
-# later:
+
+# SPA (new terminal)
 cd frontend && npm ci && npm run dev
+# App: http://localhost:5173
 ```
 
-Login with the seed user above, authorize in Swagger, then exercise `/api/tasks`.
+Login with the seed user above in the SPA (or authorize in Swagger to explore `/api/tasks`).
 ## Test strategy
 
 - Application: unit tests for validation and ownership rules
@@ -143,8 +146,8 @@ See Application services (`AuthService`, `TaskService`) and API controllers unde
 
 ## Limitations (v1)
 
-- React SPA not shipped yet
 - Demo JWT key is for local demo only — replace in any shared environment
+- No Playwright E2E suite yet
 
 ## Docs
 
