@@ -74,9 +74,9 @@ Application exceptions: `ValidationException`, `NotFoundException`, `ConflictExc
 
 Domain types live under `TaskManager.Domain.Entities` and `TaskManager.Domain.Enums` with no EF/ASP.NET attributes.
 
-## Frontend (planned)
+## Frontend
 
-React + Vite + TypeScript: login/register, task list, create/edit. Token stored client-side and sent as `Authorization: Bearer`.
+React 19 + Vite + TypeScript SPA in `frontend/`: login/register, protected task list, create/edit/delete. Token stored in `localStorage` and sent as `Authorization: Bearer`. API base URL via `VITE_API_URL` (default `http://localhost:5080`).
 
 ## Related ADRs
 
