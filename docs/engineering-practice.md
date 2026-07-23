@@ -38,7 +38,6 @@ Changes that typically require revision:
 
 ```bash
 dotnet test
-# When frontend exists:
 cd frontend && npm run build
 ```
 

@@ -149,6 +149,7 @@ input,
 textarea,
 select {
   width: 100%;
+  max-width: 100%;
   margin-top: 0.4rem;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -156,6 +157,11 @@ select {
   background: #fff;
   color: var(--text);
   transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+textarea {
+  resize: none;
+  overflow: auto;
 }
 
 input::placeholder,
@@ -306,16 +312,68 @@ label {
   display: grid;
   grid-template-columns: minmax(300px, 360px) 1fr;
   gap: 1.15rem;
-  align-items: start;
+  align-items: stretch;
+}
+
+.form-panel,
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 36.5rem;
+}
+
+.list-panel {
+  padding: 1rem 1.1rem 0.85rem;
 }
 
 .form-panel {
   transition: border-color 180ms ease, box-shadow 180ms ease;
+  padding: 1rem 1.1rem 0.85rem;
+}
+
+.form-panel .form-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.form-panel .form-actions {
+  margin-top: auto;
 }
 
 .form-panel.is-editing {
-  border-color: #b7d4c6;
-  box-shadow: 0 1px 3px rgba(11, 110, 79, 0.08), 0 10px 28px rgba(11, 110, 79, 0.08);
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.section-title-block {
+  min-width: 0;
+}
+
+.editing-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.description-field {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.description-input {
+  flex: 1;
+  min-height: 8.5rem;
+  height: 100%;
 }
 
 .section-head {
@@ -323,7 +381,11 @@ label {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-panel .section-head {
+  margin-bottom: 0.55rem;
 }
 
 .section-title {
@@ -375,6 +437,10 @@ label {
 
 .status-dot.done {
   background: var(--done-bar);
+}
+
+.status-dot.all {
+  background: linear-gradient(135deg, var(--todo-bar), var(--accent));
 }
 
 .status-trigger {
@@ -480,7 +546,9 @@ button.btn-danger:hover:not(:disabled) {
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(20, 33, 43, 0.28);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   animation: fadeIn 160ms ease both;
 }
 
@@ -552,7 +620,85 @@ button.btn-danger:hover:not(:disabled) {
 }
 
 .list-panel .section-head {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.list-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  align-items: start;
+}
+
+.search-field {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  font-weight: 400;
+}
+
+.search-field .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  margin-top: 0;
+  width: 100%;
+  min-width: 0;
+  padding-left: 2.35rem;
+  padding-right: 2.35rem;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.search-clear:hover:not(:disabled) {
+  background: #eef2f5;
+  color: var(--text);
+}
+
+.filter-field {
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+}
+
+.task-list-scroll {
+  flex: 1 1 auto;
+  height: 28.5rem;
+  min-height: 28.5rem;
+  max-height: 28.5rem;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+  margin-right: -0.15rem;
+}
+
+.task-list-scroll .empty-state {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
 }
 
 .task-list {
@@ -574,12 +720,26 @@ button.btn-danger:hover:not(:disabled) {
   border-radius: 12px;
   border-left-width: 4px;
   cursor: pointer;
-  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+  overflow: hidden;
+  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease,
+    background 150ms ease;
 }
 
 .task-card:hover {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
   transform: translateY(-1px);
+}
+
+.task-card.is-editing-row {
+  background: #f3f4f6;
+  border-color: #e2e8f0;
+  box-shadow: none;
+  transform: none;
+}
+
+.task-card.is-editing-row:hover {
+  box-shadow: none;
+  transform: none;
 }
 
 .task-card.status-todo {
@@ -592,6 +752,53 @@ button.btn-danger:hover:not(:disabled) {
 
 .task-card.status-done {
   border-left-color: var(--done-bar);
+}
+
+.list-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.list-meta {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.list-tip {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.list-footer-copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pagination-btn {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.pagination-status {
+  min-width: 3.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .task-check {
@@ -710,12 +917,6 @@ button.btn-danger:hover:not(:disabled) {
   color: var(--muted);
 }
 
-.list-tip {
-  margin: 1rem 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -730,6 +931,28 @@ button.btn-danger:hover:not(:disabled) {
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .form-panel,
+  .list-panel {
+    min-height: 0;
+    height: auto;
+  }
+
+  .task-list-scroll {
+    height: 24rem;
+    min-height: 24rem;
+    max-height: 24rem;
+  }
+
+  .list-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-field {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 
   .field-row {
@@ -752,5 +975,14 @@ button.btn-danger:hover:not(:disabled) {
   .task-actions {
     grid-column: 2;
     justify-content: flex-start;
+  }
+
+  .list-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagination {
+    justify-content: space-between;
   }
 }

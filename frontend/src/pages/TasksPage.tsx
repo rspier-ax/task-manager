@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -10,12 +11,16 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ListTodo,
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   SquareCheckBig,
   Trash2,
+  X,
 } from 'lucide-react'
 import { ApiError } from '../api/client'
 import * as tasksApi from '../api/tasksApi'
@@ -35,6 +40,10 @@ type FormState = {
   dueDate: string
 }
 
+type StatusFilter = 'all' | 'todo' | 'progress' | 'done'
+
+const PAGE_SIZE = 5
+
 const emptyForm: FormState = {
   title: '',
   description: '',
@@ -43,6 +52,13 @@ const emptyForm: FormState = {
 }
 
 const STATUS_OPTIONS = Object.values(TaskStatus)
+
+const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'todo', label: 'Todo' },
+  { value: 'progress', label: 'In progress' },
+  { value: 'done', label: 'Done' },
+]
 
 function toRequest(form: FormState): CreateTaskRequest {
   return {
@@ -75,6 +91,13 @@ function statusKey(status: TaskStatus): 'todo' | 'progress' | 'done' {
   }
 }
 
+function matchesStatusFilter(task: Task, filter: StatusFilter): boolean {
+  if (filter === 'all') {
+    return true
+  }
+  return statusKey(task.status) === filter
+}
+
 export function TasksPage() {
   const { token, user, logout } = useAuth()
   const [tasks, setTasks] = useState<Task[]>([])
@@ -87,8 +110,13 @@ export function TasksPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [page, setPage] = useState(1)
   const [pendingDelete, setPendingDelete] = useState<Task | null>(null)
   const statusMenuRef = useRef<HTMLDivElement>(null)
+  const filterMenuRef = useRef<HTMLDivElement>(null)
 
   const refreshTasks = useCallback(
     async (mode: 'initial' | 'silent' | 'refresh' = 'silent') => {
@@ -122,19 +150,24 @@ export function TasksPage() {
   }, [refreshTasks])
 
   useEffect(() => {
-    if (!statusOpen) {
-      return
-    }
+    setPage(1)
+  }, [query, statusFilter])
 
+  useEffect(() => {
     function onPointerDown(event: PointerEvent) {
-      if (!statusMenuRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (statusOpen && !statusMenuRef.current?.contains(target)) {
         setStatusOpen(false)
+      }
+      if (filterOpen && !filterMenuRef.current?.contains(target)) {
+        setFilterOpen(false)
       }
     }
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setStatusOpen(false)
+        setFilterOpen(false)
       }
     }
 
@@ -144,7 +177,33 @@ export function TasksPage() {
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [statusOpen])
+  }, [statusOpen, filterOpen])
+
+  const filteredTasks = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return tasks.filter((task) => {
+      if (!matchesStatusFilter(task, statusFilter)) {
+        return false
+      }
+      if (!needle) {
+        return true
+      }
+      const haystack = `${task.title} ${task.description ?? ''}`.toLowerCase()
+      return haystack.includes(needle)
+    })
+  }, [tasks, query, statusFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = filteredTasks.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, filteredTasks.length)
+  const pagedTasks = filteredTasks.slice(pageStart, pageEnd)
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   function startCreate() {
     setEditingId(null)
@@ -246,6 +305,9 @@ export function TasksPage() {
   }
 
   const formStatusKey = statusKey(form.status)
+  const activeFilter = FILTER_OPTIONS.find((option) => option.value === statusFilter)!
+  const hasActiveFilters = query.trim().length > 0 || statusFilter !== 'all'
+  const editingTitle = form.title.trim() || 'Untitled'
 
   return (
     <main className="app-shell">
@@ -267,12 +329,19 @@ export function TasksPage() {
       <div className="layout">
         <section className={`card form-panel${editingId ? ' is-editing' : ''}`}>
           <div className="section-head">
-            <h2 className="section-title">
-              <ListTodo className="title-icon" size={20} strokeWidth={2.25} aria-hidden />
-              {editingId ? 'Edit task' : 'Create a new task'}
-            </h2>
+            <div className="section-title-block">
+              <h2 className="section-title">
+                <ListTodo className="title-icon" size={20} strokeWidth={2.25} aria-hidden />
+                {editingId ? 'Edit task' : 'Create a new task'}
+              </h2>
+              {editingId ? (
+                <p className="editing-subtitle" title={editingTitle}>
+                  Editing: {editingTitle}
+                </p>
+              ) : null}
+            </div>
           </div>
-          <form onSubmit={onSubmit} className="stack">
+          <form onSubmit={onSubmit} className="stack form-stack">
             <label>
               Title
               <input
@@ -282,13 +351,14 @@ export function TasksPage() {
                 required
               />
             </label>
-            <label>
+            <label className="description-field">
               Description
               <textarea
+                className="description-input"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="Add more details (optional)"
-                rows={3}
+                rows={6}
               />
             </label>
             <div className="field-row">
@@ -299,7 +369,10 @@ export function TasksPage() {
                   className={`status-trigger${statusOpen ? ' is-open' : ''}`}
                   aria-haspopup="listbox"
                   aria-expanded={statusOpen}
-                  onClick={() => setStatusOpen((open) => !open)}
+                  onClick={() => {
+                    setFilterOpen(false)
+                    setStatusOpen((open) => !open)
+                  }}
                 >
                   <span className={`status-dot ${formStatusKey}`} aria-hidden />
                   <span className="status-trigger-label">
@@ -381,93 +454,217 @@ export function TasksPage() {
               Refresh
             </button>
           </div>
-          {error ? <p className="error">{error}</p> : null}
-          {loading ? (
-            <ul className="task-list" aria-busy="true" aria-label="Loading tasks">
-              {[0, 1, 2].map((index) => (
-                <li key={index} className="task-skeleton" />
-              ))}
-            </ul>
-          ) : null}
-          {!loading && tasks.length === 0 ? (
-            <div className="empty-state">
-              <p className="muted">No tasks yet. Create one on the left to get started.</p>
+
+          <div className="list-toolbar">
+            <div className="search-field">
+              <Search className="search-icon" size={16} strokeWidth={2.25} aria-hidden />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search tasks…"
+                aria-label="Search tasks"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  className="search-clear"
+                  aria-label="Clear search"
+                  onClick={() => setQuery('')}
+                >
+                  <X size={14} strokeWidth={2.5} aria-hidden />
+                </button>
+              ) : null}
             </div>
-          ) : null}
-          {!loading ? (
-            <ul className="task-list">
-              {tasks.map((task) => {
-                const key = statusKey(task.status)
-                const isDone = task.status === TaskStatus.Done
-                const isToggling = togglingId === task.id
-                return (
-                  <li
-                    key={task.id}
-                    className={`task-card status-${key}`}
-                    onClick={() => startEdit(task)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        startEdit(task)
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <button
-                      type="button"
-                      className={`task-check${isDone ? ' is-done' : ''}`}
-                      aria-label={isDone ? 'Mark as todo' : 'Mark as done'}
-                      disabled={isToggling}
-                      onClick={(e) => {
-                        stopCardClick(e)
-                        void onToggleDone(task)
+            <div className="status-field filter-field" ref={filterMenuRef}>
+              <button
+                type="button"
+                className={`status-trigger${filterOpen ? ' is-open' : ''}`}
+                aria-haspopup="listbox"
+                aria-expanded={filterOpen}
+                onClick={() => {
+                  setStatusOpen(false)
+                  setFilterOpen((open) => !open)
+                }}
+              >
+                {statusFilter === 'all' ? (
+                  <span className="status-dot all" aria-hidden />
+                ) : (
+                  <span className={`status-dot ${statusFilter}`} aria-hidden />
+                )}
+                <span className="status-trigger-label">{activeFilter.label}</span>
+                <ChevronDown
+                  className="status-chevron"
+                  size={16}
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </button>
+              {filterOpen ? (
+                <ul className="status-menu" role="listbox" aria-label="Filter by status">
+                  {FILTER_OPTIONS.map((option) => {
+                    const selected = statusFilter === option.value
+                    return (
+                      <li key={option.value} role="option" aria-selected={selected}>
+                        <button
+                          type="button"
+                          className={`status-option${selected ? ' is-selected' : ''}`}
+                          onClick={() => {
+                            setStatusFilter(option.value)
+                            setFilterOpen(false)
+                          }}
+                        >
+                          {option.value === 'all' ? (
+                            <span className="status-dot all" aria-hidden />
+                          ) : (
+                            <span className={`status-dot ${option.value}`} aria-hidden />
+                          )}
+                          {option.label}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : null}
+            </div>
+          </div>
+
+          {error ? <p className="error">{error}</p> : null}
+
+          <div className="task-list-scroll">
+            {loading ? (
+              <ul className="task-list" aria-busy="true" aria-label="Loading tasks">
+                {[0, 1, 2, 3, 4].map((index) => (
+                  <li key={index} className="task-skeleton" />
+                ))}
+              </ul>
+            ) : null}
+
+            {!loading && tasks.length === 0 ? (
+              <div className="empty-state">
+                <p className="muted">No tasks yet. Create one on the left to get started.</p>
+              </div>
+            ) : null}
+
+            {!loading && tasks.length > 0 && filteredTasks.length === 0 ? (
+              <div className="empty-state">
+                <p className="muted">No tasks match your search or filter.</p>
+              </div>
+            ) : null}
+
+            {!loading && pagedTasks.length > 0 ? (
+              <ul className="task-list">
+                {pagedTasks.map((task) => {
+                  const key = statusKey(task.status)
+                  const isDone = task.status === TaskStatus.Done
+                  const isToggling = togglingId === task.id
+                  const isEditingRow = editingId === task.id
+                  return (
+                    <li
+                      key={task.id}
+                      className={`task-card status-${key}${isEditingRow ? ' is-editing-row' : ''}`}
+                      onClick={() => startEdit(task)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          startEdit(task)
+                        }
                       }}
+                      role="button"
+                      tabIndex={0}
+                      aria-current={isEditingRow ? 'true' : undefined}
                     >
-                      {isDone ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
-                    </button>
-                    <div className="task-main">
-                      <p className="task-title">{task.title}</p>
-                      <div className="task-meta">
-                        <span className={`badge status-${key}`}>
-                          {TASK_STATUS_LABELS[task.status]}
-                        </span>
-                        {task.dueDate ? (
-                          <span className="due">
-                            <Calendar size={14} strokeWidth={2} aria-hidden />
-                            Due {new Date(task.dueDate).toLocaleDateString()}
+                      <button
+                        type="button"
+                        className={`task-check${isDone ? ' is-done' : ''}`}
+                        aria-label={isDone ? 'Mark as todo' : 'Mark as done'}
+                        disabled={isToggling}
+                        onClick={(e) => {
+                          stopCardClick(e)
+                          void onToggleDone(task)
+                        }}
+                      >
+                        {isDone ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
+                      </button>
+                      <div className="task-main">
+                        <p className="task-title">{task.title}</p>
+                        <div className="task-meta">
+                          <span className={`badge status-${key}`}>
+                            {TASK_STATUS_LABELS[task.status]}
                           </span>
+                          {task.dueDate ? (
+                            <span className="due">
+                              <Calendar size={14} strokeWidth={2} aria-hidden />
+                              Due {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
+                          ) : null}
+                        </div>
+                        {task.description ? (
+                          <p className="task-description">{task.description}</p>
                         ) : null}
                       </div>
-                      {task.description ? (
-                        <p className="task-description">{task.description}</p>
-                      ) : null}
-                    </div>
-                    <div className="task-actions" onClick={stopCardClick}>
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        aria-label="Edit task"
-                        onClick={() => startEdit(task)}
-                      >
-                        <Pencil size={16} strokeWidth={2} />
-                      </button>
-                      <button
-                        type="button"
-                        className="icon-btn danger"
-                        aria-label="Delete task"
-                        onClick={() => setPendingDelete(task)}
-                      >
-                        <Trash2 size={16} strokeWidth={2} />
-                      </button>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : null}
-          {!loading && tasks.length > 0 ? (
-            <p className="list-tip">Tip: Click on a task to edit.</p>
+                      <div className="task-actions" onClick={stopCardClick}>
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          aria-label="Edit task"
+                          onClick={() => startEdit(task)}
+                        >
+                          <Pencil size={16} strokeWidth={2} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn danger"
+                          aria-label="Delete task"
+                          onClick={() => setPendingDelete(task)}
+                        >
+                          <Trash2 size={16} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : null}
+          </div>
+
+          {!loading && filteredTasks.length > 0 ? (
+            <div className="list-footer">
+              <div className="list-footer-copy">
+                <p className="list-meta muted">
+                  Showing {pageStart + 1}–{pageEnd} of {filteredTasks.length}
+                  {hasActiveFilters ? ' (filtered)' : ''}
+                </p>
+                {!hasActiveFilters ? (
+                  <p className="list-tip">Tip: Click on a task to edit.</p>
+                ) : null}
+              </div>
+              <div className="pagination">
+                <button
+                  type="button"
+                  className="ghost pagination-btn"
+                  disabled={safePage <= 1}
+                  aria-label="Previous page"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  <ChevronLeft size={16} strokeWidth={2.25} aria-hidden />
+                  Prev
+                </button>
+                <span className="pagination-status">
+                  {safePage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="ghost pagination-btn"
+                  disabled={safePage >= totalPages}
+                  aria-label="Next page"
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                >
+                  Next
+                  <ChevronRight size={16} strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
+            </div>
           ) : null}
         </section>
       </div>
